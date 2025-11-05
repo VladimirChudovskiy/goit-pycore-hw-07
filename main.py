@@ -1,6 +1,5 @@
 from task1 import AddressBook, Record
 
-
 def input_error(func):
     def wrapper(*args, **kwargs):
         try:
@@ -10,7 +9,6 @@ def input_error(func):
         except AttributeError:
             return "Error: Contact not found."
     return wrapper
-
 
 @input_error
 def add_contact(args, book: AddressBook):
@@ -73,7 +71,6 @@ def birthdays(args, book: AddressBook):
         f"{b['name']} — {b['birthday']} (через {b['days_left']} дн.)"
         for b in upcoming
     )
-
 
 def parse_input(user_input):
     parts = user_input.strip().split()
