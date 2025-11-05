@@ -1,17 +1,17 @@
 from task1 import AddressBook, Record
 
 
-# === Декоратор для обробки помилок ===
 def input_error(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except (KeyError, ValueError, IndexError) as e:
             return f"Error: {str(e)}"
+        except AttributeError:
+            return "Error: Contact not found."
     return wrapper
 
 
-# === Функції-обробники команд ===
 @input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
@@ -29,8 +29,6 @@ def add_contact(args, book: AddressBook):
 def change_contact(args, book: AddressBook):
     name, old_phone, new_phone = args
     record = book.find(name)
-    if not record:
-        return "Contact not found."
     record.edit_phone(old_phone, new_phone)
     return "Phone updated."
 
@@ -39,8 +37,6 @@ def change_contact(args, book: AddressBook):
 def show_phone(args, book: AddressBook):
     name = args[0]
     record = book.find(name)
-    if not record:
-        return "Contact not found."
     return f"{name}: {'; '.join(p.value for p in record.phones)}"
 
 
@@ -55,8 +51,6 @@ def show_all(args, book: AddressBook):
 def add_birthday(args, book: AddressBook):
     name, date = args
     record = book.find(name)
-    if not record:
-        return "Contact not found."
     record.add_birthday(date)
     return f"Birthday added for {name}."
 
@@ -65,8 +59,6 @@ def add_birthday(args, book: AddressBook):
 def show_birthday(args, book: AddressBook):
     name = args[0]
     record = book.find(name)
-    if not record:
-        return "Contact not found."
     if record.birthday:
         return f"{name}'s birthday: {record.birthday.value.strftime('%d.%m.%Y')}"
     return f"{name} has no birthday set."
@@ -77,22 +69,29 @@ def birthdays(args, book: AddressBook):
     upcoming = book.get_upcoming_birthdays()
     if not upcoming:
         return "No birthdays this week."
-    return "\n".join(f"{b['name']} — {b['birthday']} (через {b['days_left']} дн.)" for b in upcoming)
+    return "\n".join(
+        f"{b['name']} — {b['birthday']} (через {b['days_left']} дн.)"
+        for b in upcoming
+    )
 
 
-# === Парсер команд ===
 def parse_input(user_input):
     parts = user_input.strip().split()
+    if not parts:
+        return "", []
     return parts[0].lower(), parts[1:]
 
 
-# === Основна логіка ===
 def main():
     book = AddressBook()
     print("Welcome to the assistant bot!")
 
     while True:
-        user_input = input("Enter a command: ")
+        user_input = input("Enter a command: ").strip()
+
+        if not user_input:
+            continue
+
         command, args = parse_input(user_input)
 
         if command in ["close", "exit"]:

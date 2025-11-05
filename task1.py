@@ -61,7 +61,11 @@ class Record:
 
     def __str__(self):
         phones = "; ".join(p.value for p in self.phones)
-        bday = self.birthday.value.strftime("%d.%m.%Y") if self.birthday else "—"
+        bday = (
+            self.birthday.value.strftime("%d.%m.%Y")
+            if self.birthday
+            else "—"
+        )
         return f"{self.name.value}: {phones}; Birthday: {bday}"
 
 class AddressBook(UserDict):
@@ -79,39 +83,21 @@ class AddressBook(UserDict):
         today = datetime.now().date()
         upcoming = []
         for record in self.data.values():
-            if record.birthday:
-                next_birthday = record.birthday.value.replace(year=today.year)
-                if next_birthday < today:
-                    next_birthday = next_birthday.replace(year=today.year + 1)
-                days_left = (next_birthday - today).days
-                if days_left <= 7:
-                    upcoming.append({
-                        "name": record.name.value,
-                        "birthday": next_birthday.strftime("%d.%m.%Y"),
-                        "days_left": days_left
-                    })
+            if not record.birthday:
+                continue
+
+            next_birthday = record.birthday.value.replace(year=today.year)
+            if next_birthday < today:
+                next_birthday = next_birthday.replace(year=today.year + 1)
+
+            if next_birthday.weekday() >= 5:
+                next_birthday += timedelta(days=7 - next_birthday.weekday())
+
+            days_left = (next_birthday - today).days
+            if 0 <= days_left <= 7:
+                upcoming.append({
+                    "name": record.name.value,
+                    "birthday": next_birthday.strftime("%d.%m.%Y"),
+                    "days_left": days_left,
+                })
         return upcoming
-
-
-# using test
-if __name__ == "__main__":
-    book = AddressBook()
-
-    rec1 = Record("Іван")
-    rec1.add_phone("+380971234567")
-    rec1.add_birthday("05.11.1990")
-
-    rec2 = Record("Марія")
-    rec2.add_phone("+380631112233")
-    rec2.add_birthday("10.11.1995")
-
-    book.add_record(rec1)
-    book.add_record(rec2)
-
-    print("📒 Усі контакти:")
-    for rec in book.data.values():
-        print(rec)
-
-    print("\n🎂 Дні народження на наступному тижні:")
-    for info in book.get_upcoming_birthdays():
-        print(f"{info['name']} — {info['birthday']} (через {info['days_left']} дн.)")
